@@ -2,39 +2,47 @@ import sqlite3
 import json
 import numpy as np
 
+def setLabel():
+    conn = sqlite3.connect('./data/text_vectors.db')
+    c = conn.cursor()
+    try:
+        c.execute("SELECT MAX(label) FROM text_vectors")
+        # 最大のラベル値を取得
+        last_label_result = c.fetchone()[0]
+        label = last_label_result + 1
+        conn.close()
+    except:
+        conn.close()
+        return 1
+    return label
+
+
 def save_vectors(data_to_save):
-    # データベース接続を開く（データベースファイルがない場合は新たに作成される）
     conn = sqlite3.connect('./data/text_vectors.db')
     c = conn.cursor()
 
-    # テーブルの作成（既に存在する場合はスキップ）
     c.execute('''CREATE TABLE IF NOT EXISTS text_vectors
-                 (text TEXT, vector TEXT)''')
+                 (text TEXT, WordClass TEXT, vector TEXT, label INTEGER)''')
 
-    # データを挿入
     for item in data_to_save:
-        # ベクトルをJSON形式の文字列に変換して保存
         vector_str = json.dumps(item['vector'])
-        c.execute("INSERT INTO text_vectors (text, vector) VALUES (?, ?)", (item['text'], vector_str))
-
-    # 変更をコミットし、接続を閉じる
+        c.execute("INSERT INTO text_vectors (text, WordClass, vector, label) VALUES (?, ?, ?, ?)", 
+                  (item['text'], item["WordClass"], vector_str, item['label']))
+        
     conn.commit()
     conn.close()
 
 def load_vectors():
-    # データベース接続を開く
     conn = sqlite3.connect('./data/text_vectors.db')
     c = conn.cursor()
 
-    # データを読み込む
-    c.execute("SELECT text, vector FROM text_vectors")
+    c.execute("SELECT text, WordClass, vector, label FROM text_vectors")
     data = c.fetchall()
 
-    # データを処理
     texts = [item[0] for item in data]
-    vectors = np.array([json.loads(item[1]) for item in data])
+    WordClass = [item[1] for item in data]
+    vectors = np.array([json.loads(item[2]) for item in data])
+    labels = [item[3] for item in data]
 
-    # データベース接続を閉じる
     conn.close()
-    
-    return texts, vectors
+    return texts, WordClass, vectors, labels
