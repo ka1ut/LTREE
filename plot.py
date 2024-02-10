@@ -4,19 +4,26 @@ from matplotlib.font_manager import FontProperties
 from database import load_vectors
 
 def plot_vectors():
-    # load_vectors()関数からテキストとベクトルを読み込む
-    texts, vectors = load_vectors()
+    texts, WordClass, vectors, labels = load_vectors()
+
+    print("------------data------------")
+    for text, WordClass, label in zip(texts, WordClass, labels):
+        print(f"Text: {text}, Class: {WordClass}, Label: {label}")
+    print("---------------------------")
+
 
     # PCAを適用して2次元に削減
     pca = PCA(n_components=2)
     transformed_data = pca.fit_transform(vectors)
 
-    # プロット時に日本語フォントを指定
-    font_prop = FontProperties(fname='./font/gothic.ttf')  # 適切なフォントパスを指定
+    font_prop = FontProperties(fname='./font/gothic.ttf')
 
     # プロットを生成
     plt.figure(figsize=(8, 6))
-    plt.scatter(transformed_data[:, 0], transformed_data[:, 1])
+    unique_labels = set(labels)
+    for label in unique_labels:
+        idx = [i for i, l in enumerate(labels) if l == label]
+        plt.scatter(transformed_data[idx, 0], transformed_data[idx, 1], label=label)
     for i, txt in enumerate(texts):
         plt.annotate(txt, (transformed_data[i, 0], transformed_data[i, 1]),
                     fontsize=9, fontproperties=font_prop)
@@ -24,4 +31,8 @@ def plot_vectors():
     plt.xlabel("Component 1", fontproperties=font_prop)
     plt.ylabel("Component 2", fontproperties=font_prop)
     plt.grid(True)
+    plt.legend()
     plt.show()
+
+if __name__ == "__main__":
+    plot_vectors()
